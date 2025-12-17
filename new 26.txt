@@ -1,0 +1,425 @@
+1. Write a program to reverse a string without using the reverse() method.
+
+function reverseString(str) {
+  let reversed = '';
+  for (let i = str.length - 1; i >= 0; i--) {
+    reversed += str[i];
+  }
+  return reversed;
+}
+
+// Example usage
+console.log(reverseString("Hello")); // "olleH"
+console.log(reverseString("JavaScript")); // "tpircSavaJ"
+
+2. What is a generator function in JavaScript? How does it work?
+A generator function in JavaScript is a special type of function that can pause its execution and resume later Unlike a normal function that runs to completion and returns a single value, a generator returns a Generator object (an iterator) that yields multiple values on demand using the yield keyword. 
+Key Concepts
+function* syntax: Generator functions are defined using an asterisk (*) after the function keyword (e.g., function* myGenerator() { ... }).
+yield keyword: The yield keyword pauses the function's execution and returns the value following it to the caller
+
+Generator object: When you call a generator function, it does not run the code inside immediately
+
+.next() method: This is the primary method used to consume the generator. Calling .next() resumes the function's execution until the next yield (or return) is encountered. It returns an object in the format { value: ..., done: <boolean> }.
+value: The yielded value (or undefined if none specified).
+done: A boolean indicating if the generator has finished executing (true once complete, false otherwise). 
+
+function* simpleGenerator() {
+  yield 'First value';
+  yield 'Second value';
+  return 'Done'; // A return statement ends the generator
+}
+
+const gen = simpleGenerator();
+
+console.log(gen.next()); // Output: { value: 'First value', done: false }
+console.log(gen.next()); // Output: { value: 'Second value', done: false }
+console.log(gen.next()); // Output: { value: 'Done', done: true }
+console.log(gen.next()); // Output: { value: undefined, done: true } (after completion)
+
+
+5.state vs props
+| Feature      | State                    | Props                  |
+| ------------ | ------------------------ | ---------------------- |
+| Owner        | Component itself         | Parent component       |
+| Mutable      | ✅ Yes                    | ❌ No                   |
+| Purpose      | Dynamic data, user input | Passing data downward  |
+| Scope        | Local to component       | Parent → Child         |
+| Modification | setState() / useState()  | Cannot modify directly |
+
+
+11. Explain useMemo and React.memo, and describe the differences between them.
+
+What is React.memo?
+React.memo is a Higher-Order Component (HOC) that wraps a component and prevents it from re-rendering if its props haven't changed
+
+How It Works
+// Normal Component - Re-renders every time parent re-renders
+function Greeting(props) {
+  console.log("Greeting rendered");
+  return <h1>Hello, {props.name}!</h1>;
+}
+
+// Memoized Component - Only re-renders if props change
+const MemoizedGreeting = React.memo(Greeting);
+
+// Usage
+function Parent() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div>
+      <button onClick={() => setCount(count + 1)}>
+        Count: {count}
+      </button>
+      
+      {/* Will NOT re-render unless 'name' prop changes */}
+      <MemoizedGreeting name="Alice" />
+    </div>
+  );
+}
+Execution Flow:
+
+Parent re-renders (count changes)
+
+React checks MemoizedGreeting's props
+
+Props unchanged → Component skips re-render
+
+No "Greeting rendered" message in console
+
+Key Features
+✅ Prevents unnecessary re-renders - If props are the same
+✅ Shallow comparison - Compares props using Object.is()
+✅ Custom comparison - Can provide custom comparison function
+✅ Easy to implement - Just wrap the component
+✅ Works on entire component - Memoizes the whole output
+
+useMemo Explained
+What is useMemo?
+useMemo is a React Hook that memoizes a computed value and only recalculates it when its dependencies change.
+// Prevents expensive calculations from running unnecessarily
+const memoizedValue = useMemo(
+  () => expensiveCalculation(dependencies),
+  [dependencies]  // Only recalculate when dependencies change
+);
+
+| Aspect       | React.memo                      | useMemo                      |
+| ------------ | ------------------------------- | ---------------------------- |
+| Memoizes     | Entire component                | Specific values              |
+| Applied to   | Component definition            | Inside component body        |
+| Dependency   | Props (automatic)               | Custom dependency array      |
+| Prevents     | Component re-render             | Value recalculation          |
+| Syntax       | React.memo(Component)           | useMemo(() => {...}, [deps]) |
+| Return value | Memoized component              | Memoized value               |
+| Use when     | Props repeat, parent re-renders | Calculation is expensive     |
+
+
+16. Why do we need to create a copy of the state when updating it in React?
+React detects changes by comparing object references (memory addresses), not just values:
+
+function BadCounter() {
+  const [user, setUser] = useState({ name: 'Alice', age: 25 });
+  
+  const handleUpdate = () => {
+    // ❌ WRONG - Direct mutation
+    user.name = 'Bob';        // Changed the object
+    setUser(user);            // Same object reference!
+    
+    // React compares:
+    // oldObject === newObject
+    // SAME REFERENCE! → No change detected → NO RE-RENDER!
+  };
+  
+  return (
+    <div>
+      <p>Name: {user.name}</p>  {/* Still shows 'Alice' */}
+      <button onClick={handleUpdate}>Update</button>
+    </div>
+  );
+}
+Result:
+
+❌ State updates internally
+
+❌ Component doesn't re-render
+
+❌ User sees old data
+
+function GoodCounter() {
+  const [user, setUser] = useState({ name: 'Alice', age: 25 });
+  
+  const handleUpdate = () => {
+    // ✅ CORRECT - Create new object
+    setUser({ ...user, name: 'Bob' });  // New object!
+    
+    // React compares:
+    // oldObject === newObject
+    // DIFFERENT REFERENCES! → Change detected → RE-RENDER! ✓
+  };
+  
+  return (
+    <div>
+      <p>Name: {user.name}</p>  {/* Shows 'Bob' */}
+      <button onClick={handleUpdate}>Update</button>
+    </div>
+  );
+}
+Result:
+
+✅ New object created
+
+✅ React detects change
+
+✅ Component re-renders
+
+✅ User sees updated data
+
+// Original
+const user = { name: 'Alice', age: 25 };
+
+// Wrong - Same reference
+setUser(user);  // No re-render
+
+// Correct - New object
+setUser({ ...user, name: 'Bob' });
+
+// Or with callback form
+setUser(prev => ({ ...prev, name: 'Bob' }));
+
+
+how to optimiation?
+// ✅ 1. Use React.memo for components with props
+const MemoChild = React.memo(Child);
+
+// ✅ 2. Use useCallback for functions passed as props
+const handleClick = useCallback(() => {...}, [deps]);
+
+// ✅ 3. Use useMemo for expensive calculations
+const result = useMemo(() => {...}, [deps]);
+
+// ✅ 4. Keep props stable
+const config = useMemo(() => ({ ... }), []);
+
+// ✅ 5. Split state by domain
+const [user, setUser] = useState();
+const [posts, setPosts] = useState();
+
+// ✅ 6. Use correct key in lists
+{items.map(item => <Item key={item.id} />)}
+
+// ✅ 7. Use lazy loading for heavy components
+const Heavy = lazy(() => import('./Heavy'));
+
+// ✅ 8. Use Suspense
+<Suspense fallback={<Loading />}>
+  <Heavy />
+</Suspense>
+
+28. How would you check if an object is empty in JavaScript?
+
+To check if an object is empty in JavaScript, use Object.keys(obj).length === 0. This returns the object's enumerable own property keys as an array and checks if the array is empty.
+const isEmpty = (obj) => Object.keys(obj).length === 0;
+
+console.log(isEmpty({}));           // true
+console.log(isEmpty({name: 'Alice'})); // false
+console.log(isEmpty({}));           // true
+
+
+Controlled components in React are the components whose state and behaviors are managed by React components using states while the uncontrolled components manage their own state and control their behaviors with the help of DOM.
+
+
+  const [user, setUser] = useState({
+
+	user: {
+
+	    name: "some-name",
+
+    	    age: 20,
+
+            phone: "0000000000",
+
+            address: {
+
+            	city: {
+
+			code: '',
+
+			value: ''
+
+	          },
+
+      		state: "some-state",
+
+      		country: "some-country"
+
+    		}
+
+	}
+
+  });
+   const [deepuser, setdeepUser] = useState(JSON.parse(JSON.stringify(user)))
+
+Method 1: Using useState with Deep Copy (Recommended)
+import { useState } from 'react';
+
+const MyComponent = () => {
+  const [user, setUser] = useState({
+    user: {
+      name: "some-name",
+      age: 20,
+      phone: "0000000000",
+      address: {
+        city: {
+          code: '',
+          value: ''
+        },
+        state: "some-state",
+        country: "some-country"
+      }
+    }
+  });
+
+  // Create another state with deep copy
+  const [userCopy, setUserCopy] = useState(
+    JSON.parse(JSON.stringify(user))
+  );
+
+  return (
+    <>
+      {/* Your JSX here */}
+    </>
+  );
+};
+method 3  as there is change in original object 
+
+import { useState, useEffect } from 'react';
+
+const MyComponent = () => {
+  const [user, setUser] = useState({
+    user: {
+      name: "some-name",
+      age: 20,
+      phone: "0000000000",
+      address: {
+        city: {
+          code: '',
+          value: ''
+        },
+        state: "some-state",
+        country: "some-country"
+      }
+    }
+  });
+
+  const [userCopy, setUserCopy] = useState(null);
+
+  // Sync userCopy whenever user changes
+  useEffect(() => {
+    setUserCopy(JSON.parse(JSON.stringify(user)));
+  }, [user]);
+
+  return (
+    <>
+      {/* Your JSX here */}
+    </>
+  );
+};
+
+method 2 using loadash
+
+import { useState, useEffect } from 'react';
+import _ from 'lodash';
+
+const MyComponent = () => {
+  const [user, setUser] = useState({
+    user: {
+      name: "some-name",
+      age: 20,
+      phone: "0000000000",
+      address: {
+        city: {
+          code: '',
+          value: ''
+        },
+        state: "some-state",
+        country: "some-country"
+      }
+    }
+  });
+
+  const [userCopy, setUserCopy] = useState(null);
+
+  useEffect(() => {
+    setUserCopy(_.cloneDeep(user));
+  }, [user]);
+
+  return (
+    <>
+      {/* Your JSX here */}
+    </>
+  );
+};
+import { useState, useEffect } from 'react';
+import _ from 'lodash';
+
+const MyComponent = () => {
+  const [user, setUser] = useState({
+    user: {
+      name: "some-name",
+      age: 20,
+      phone: "0000000000",
+      address: {
+        city: {
+          code: '',
+          value: ''
+        },
+        state: "some-state",
+        country: "some-country"
+      }
+    }
+  });
+
+  const [userCopy, setUserCopy] = useState(null);
+
+  useEffect(() => {
+    setUserCopy(_.cloneDeep(user));
+  }, [user]);
+
+  return (
+    <>
+      {/* Your JSX here */}
+    </>
+  );
+};
+	
+	
+	import React from 'react';
+import { useState } from 'react'
+
+function App() {
+  const [count, setCount] = useState(true)
+function toggel(){
+  count?setCount(false):setCount(true)
+}
+  return (
+   <>
+     
+      {count?<Second/>:<First/>}
+            <button onClick={toggel}>click Me</button>
+
+   </>
+  )
+}
+function First(){
+  return <>
+    
+  </>
+}
+function Second(){
+   return <>
+    <h1>Hi</h1>
+  </>
+}
+
+export default App
